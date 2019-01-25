@@ -2,6 +2,7 @@
 # The foregoing line is for telling python to interpret the following string with utf-8.（如果文件中有中文必须有上一条）
 import argparse
 import os
+import random
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -26,12 +27,11 @@ np.random.seed(0)
 
 class Trainer(object):
 
+    """To build training instance.
 
-"""To build training instance.
+    Use the Trainer.run() method to train.
 
-Use the Trainer.run() method to train.
-
-"""
+    """
 
     def __init__(self, config):
         self._config = config
@@ -99,7 +99,7 @@ Use the Trainer.run() method to train.
         else:
             raise ValueError('No Support.')
         # decoder
-        decoder = Decoder(embedding, rnn_cell, attention, self._config.hidden_size)r
+        decoder = Decoder(embedding, rnn_cell, attention, self._config.hidden_size)
         # model
         model = Seq2Seq(embedding, encoder, bridge, decoder)
         return model
