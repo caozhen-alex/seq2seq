@@ -218,8 +218,6 @@ Use the Trainer.run() method to train.
         torch.save(model, path)
 
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "4"
-
 parser = argparse.ArgumentParser()
 parser.add_argument('--rnn_type', type=str, default='LSTM')
 parser.add_argument('--attention_type', type=str, default='Multiplicative', choices=['Dot', 'ScaledDot', 'Additive', 'Multiplicative', 'MLP'])
@@ -238,8 +236,11 @@ parser.add_argument('--embedding_file_name', type=str, default='data/vocab/glove
 parser.add_argument('--vocab_path', type=str, default='./data/vocab/index2word.pickle')
 parser.add_argument('--train_path', type=str, default='./data/processed/train.npz')
 parser.add_argument('--dev_path', type=str, default='./data/processed/dev.npz')
+parser.add_argument('--gpu_id', type=str, default='5')
 
 config = parser.parse_args()
+
+os.environ["CUDA_VISIBLE_DEVICES"] = config.gpu_id
 
 trainer = Trainer(config)
 trainer.run()
