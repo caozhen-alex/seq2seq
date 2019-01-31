@@ -3,6 +3,7 @@ import torch.nn as nn
 from torch.nn import init
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 
+
 class Encoder(nn.Module):
 
     def __init__(self, rnn_type, embed_size, hidden_size, num_layers, bidirectional, dropout):
@@ -52,6 +53,7 @@ class Encoder(nn.Module):
         init_states = self._get_init_states(batch_size)
         packed_src, sort_index = self._pack_padded_sequence(src_embedding, src_lens)
         packed_output, final_states = self._rnn(packed_src, init_states)
+        #Tensor(batch, seq_len, num_directions * hidden_size); (h_n, c_n) Tensor(num_layers * num_directions, batch_size, hidden_size)
         output, final_states = self._pad_packed_sequence(packed_output, final_states, sort_index)
         return output, final_states
 
@@ -78,11 +80,9 @@ class Encoder(nn.Module):
 
     def _pad_packed_sequence(self, packed_output, final_states, sort_index):
         output, _ = pad_packed_sequence(packed_output, batch_first=True)
-        back_map = {index: i for i, index in enumerate(sort_index)}
-        reorder_index = [back_map[i] for i in range(len(sort_index))]
-        output = self._reorder_sequence(output, reorder_index)
-        reorder_index = torch.LongTensor(reorder_index).cuda()
-        if self._rnn_type == 'LSTM': # LSTM
+        output = self._reorder_sequence(output, sort_index)
+        reorder_index = torch.LongTensor(sort_index).cuda()
+        if self._rnn_type == 'LSTM':  # LSTM
             final_states = (
                 final_states[0].index_select(index=reorder_index, dim=1),
                 final_states[1].index_select(index=reorder_index, dim=1)

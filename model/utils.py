@@ -20,14 +20,17 @@ UNK_INDEX = 3
 url = re.compile('(<url>.*</url>)')
 spacy_en = spacy.load('en')
 
+
 def tokenize(text):
     return [tok.text for tok in spacy_en.tokenizer(url.sub('@URL@', text))]
+
 
 def sequence_mean(sequence, seq_lens, dim):
     assert sequence.size(0) == len(seq_lens)
     seq_sum = torch.sum(sequence, dim=dim, keepdim=False)
     seq_mean = torch.stack([s / l for s, l in zip(seq_sum, seq_lens)], dim=0)
     return seq_mean
+
 
 def len_mask(seq_lens, max_len):
     batch_size = len(seq_lens)
@@ -36,6 +39,7 @@ def len_mask(seq_lens, max_len):
     for i, l in enumerate(seq_lens):
         mask[i, :l].fill_(1)
     return mask
+
 
 def load_word_embeddings(fname, vocab_size, embed_size, word2index):
     if not os.path.isfile(fname):
@@ -50,7 +54,8 @@ def load_word_embeddings(fname, vocab_size, embed_size, word2index):
     word2vec[word2index[PAD], :] = 0
     return word2vec
 
+
 def sentence_clip(sentences, lens):
     max_len = max(lens)
-    sentences = sentences[:, 0:max_len].contiguous()
+    sentences = sentences[:, 0:max_len].contiguous()  # contiguous(): makes a copy of tensor so the order of elements would be same as if tensor of same shape created from scratch.
     return sentences
