@@ -26,7 +26,7 @@ class Encoder(nn.Module):
                 nn.Parameter(
                     torch.Tensor(state_layers, hidden_size)
                 )
-            ])
+            ])  # List of two tensors whose size is (state_layers(num_layers*2(if bi)), hidden_size)
             init.xavier_uniform_(self._init_states[0])
             init.xavier_uniform_(self._init_states[1])
         elif rnn_type == 'GRU':
@@ -50,12 +50,14 @@ class Encoder(nn.Module):
         # src_lens: list (batch_size,)
         batch_size = src_embedding.size(0)
         assert batch_size == len(src_lens)
-        init_states = self._get_init_states(batch_size)
+        init_states = self._get_init_states(batch_size)  # tuple of two tensors whose size is (state_layers, batch_size, hidden_size)
         packed_src, sort_index = self._pack_padded_sequence(src_embedding, src_lens)
         packed_output, final_states = self._rnn(packed_src, init_states)
-        #Tensor(batch, seq_len, num_directions * hidden_size); (h_n, c_n) Tensor(num_layers * num_directions, batch_size, hidden_size)
+        # Tensor(batch_size, seq_len, num_directions * hidden_size); (h_n, c_n) Tensor(num_layers * num_directions, batch_size, hidden_size)
         output, final_states = self._pad_packed_sequence(packed_output, final_states, sort_index)
         return output, final_states
+        # output: Tensor(batch_size, time_step, num_directions*hidden_size)
+        # final_states: tuple consisting two Tensors; Tensor(batch_size, num_layers*num_directions, hidden_size)
 
     def _get_init_states(self, batch_size):
         if self._rnn_type == 'LSTM':    # LSTM
@@ -64,7 +66,7 @@ class Encoder(nn.Module):
             init_states = (
                 self._init_states[0].unsqueeze(1).expand(*size).contiguous(),
                 self._init_states[1].unsqueeze(1).expand(*size).contiguous()
-            )
+            )  # tuple of two tensors whose size is (state_layers, batch_size, hidden_size)
         else:   # GRU
             state_layers, hidden_size = self._init_states.size()
             size = (state_layers, batch_size, hidden_size)

@@ -5,6 +5,7 @@ from torch.nn import init
 from model.utils import INF, INIT
 import math
 
+
 class Attention(nn.Module):
 
     def __init__(self):
@@ -15,30 +16,32 @@ class Attention(nn.Module):
         # key: Tensor (batch_size, time_step, key_size)
         # value: Tensor (batch_size, time_step, hidden_size)
         # mask: Tensor (batch_size, time_step)
-        score = self._score(query, key)
+        score = self._score(query, key)  # Tensor(batch_size, 1, time_step)
         probability = self._probability_normalize(score, mask)
         output = self._attention_aggregate(probability, value)
-        return output
+        return output  # Tensor(batch_size, hidden_size)
 
     def _score(self, query, key):
         raise NoImplementedError('Attention score method is not implemented.')
 
     def _probability_normalize(self, score, mask):
-        score = score.masked_fill(mask.unsqueeze(1)==0, -INF)
-        probability = F.softmax(score, dim=-1)
+        score = score.masked_fill(mask.unsqueeze(1) == 0, -INF)  # Fills elements of self tensor with value where mask is zero. -INF: negative infinite, the value to fill in with.
+        probability = F.softmax(score, dim=-1)  # Tensor (batch_size, 1, time_step), size is the same as score.
         return probability
 
     def _attention_aggregate(self, probability, value):
-        return probability.matmul(value).squeeze(1)
+        return probability.matmul(value).squeeze(1)  # probability.matmul(value).size()=torch.Size([batch_size, 1, hidden_size])
+
 
 class DotAttention(Attention):
 
     def __init__(self):
         super(DotAttention, self).__init__()
 
-    def _score(self, query, key):
+    def _score(self, query, key):  # output: Tensor(batch_size, 1, time_step)
         assert query.size(1) == key.size(2)
-        return query.unsqueeze(1).matmul(key.transpose(1, 2))
+        return query.unsqueeze(1).matmul(key.transpose(1, 2))   # Returns a new tensor with a dimension of size one inserted at the specified position.
+
 
 class ScaledDotAttention(Attention):
 
@@ -48,6 +51,7 @@ class ScaledDotAttention(Attention):
     def _score(self, query, key):
         assert query.size(1) == key.size(2)
         return query.unsqueeze(1).matmul(key.transpose(1, 2)) / math.sqrt(query.size(1))
+
 
 class AdditiveAttention(Attention):
 
@@ -60,6 +64,7 @@ class AdditiveAttention(Attention):
         query = query.repeat(time_step, 1, 1).transpose(0, 1)  # (batch_size, time_step, query_size)
         scores = self._projection(torch.cat([query, key], dim=2)).transpose(1, 2)
         return scores
+
 
 class MultiplicativeAttention(Attention):
 
@@ -78,6 +83,7 @@ class MultiplicativeAttention(Attention):
         key = key.unsqueeze(-2)  # (batch_size, time_step, 1, key_size)
         scores = key.matmul(mids).squeeze(-1).transpose(1, 2)  # (batch_size, time_step)
         return scores
+
 
 class MultiLayerPerceptronAttention(Attention):
 

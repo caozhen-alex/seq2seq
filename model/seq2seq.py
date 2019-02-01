@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from model.utils import len_mask, SOS_INDEX
 from model.beam_search import Beamer
 
+
 class Seq2Seq(nn.Module):
 
     def __init__(self, embedding, encoder, bridge, decoder):
@@ -24,8 +25,11 @@ class Seq2Seq(nn.Module):
     def _encode(self, src, src_lens):
         # src: Tensor (batch_size, time_step)
         # src_lens: list (batch_size,)
-        src_embedding = self._embedding(src)
+        src_embedding = self._embedding(src)   # Tensor(batch_size, time_step, embed_size)
         encoder_output, final_encoder_states = self._encoder(src_embedding, src_lens)
+        # encoder_output: Tensor(batch_size, time_step, num_directions*hidden_size)
+        # final_encoder_states: tuple consisting two Tensors; Tensor(batch_size, num_layers*num_directions, hidden_size)
+
         src_memory, init_states = self._bridge(encoder_output, final_encoder_states)
         src_mask = len_mask(src_lens, src_memory.size(1))
         return src_memory, src_mask, init_states
