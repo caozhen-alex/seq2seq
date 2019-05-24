@@ -74,14 +74,17 @@ class Encoder(nn.Module):
         return init_states
 
     def _pack_padded_sequence(self, src_embedding, src_lens):
-        sort_index = sorted(range(len(src_lens)), key=lambda i: src_lens[i], reverse=True)
+        sort_index = sorted(range(len(src_lens)), key=lambda i: src_lens[i], reverse=True)    # 按src_lens元素大小做其index的降序排列
         src_lens = [src_lens[i] for i in sort_index]
         src_embedding = self._reorder_sequence(src_embedding, sort_index)
-        packed_src = pack_padded_sequence(src_embedding, src_lens, batch_first=True)
+        packed_src = pack_padded_sequence(src_embedding, src_lens, batch_first=True)  # B x T x *
         return packed_src, sort_index
 
     def _pad_packed_sequence(self, packed_output, final_states, sort_index):
-        output, _ = pad_packed_sequence(packed_output, batch_first=True)
+        output, _ = pad_packed_sequence(packed_output, batch_first=True)  # B x T x *
+
+        sort_index = torch.LongTensor(sort_index).argsort(descending=False)   # added to processed batch by the LSTM to the original order.
+
         output = self._reorder_sequence(output, sort_index)
         reorder_index = torch.LongTensor(sort_index).cuda()
         if self._rnn_type == 'LSTM':  # LSTM
@@ -96,4 +99,4 @@ class Encoder(nn.Module):
     def _reorder_sequence(self, sequence, order):
         assert sequence.size(0) == len(order)
         order = torch.LongTensor(order).cuda()
-        return sequence.index_select(index=order, dim=0)
+        return sequence.index_select(index=order, dim=0)   # Returns a new tensor which indexes the input tensor along dimension dim using the entries in index which is a LongTensor.

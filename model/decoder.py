@@ -52,10 +52,10 @@ class Decoder(nn.Module):
 
     def get_init_output(self, src_memory, src_lens, init_states):
         if isinstance(init_states, tuple):  # LSTM
-            init_top_hidden = init_states[0][-1]
+            init_top_hidden = init_states[0][-1]  # init_hidden[-1]: Tensor(batch_size, hidden_size)
         else:   # GRU
             init_top_hidden = init_states[-1]
-        src_mean = sequence_mean(src_memory, src_lens, dim=1)
+        src_mean = sequence_mean(src_memory, src_lens, dim=1)  # Tensor(batch_size, hidden_size)
         init_output = self._output_projection(torch.cat([init_top_hidden, src_mean], dim=1))
         return init_output
 
@@ -108,7 +108,7 @@ class MultiLayerLSTMCells(nn.Module):
         return self._bias
 
 class MultiLayerGRUCells(nn.Module):
-    
+
     def __init__(self, input_size, hidden_size, num_layers, dropout, bias=True):
         super(MultiLayerGRUCells, self).__init__()
         self._input_size = input_size
